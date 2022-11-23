@@ -9,7 +9,7 @@ model:
     timesteps: 1000
     first_stage_key: image
     cond_stage_key: caption
-    image_size: 32
+    image_size: 64
     channels: 4
     cond_stage_trainable: false   # Note: different from the one we trained before
     conditioning_key: crossattn
@@ -30,7 +30,7 @@ model:
       target: ldm.modules.diffusionmodules.openaimodel.UNetModel
       params:
         image_size: 32 # unused
-        from_pretrained: '/data/scratch/diffuser/stable-diffusion-v1-4/unet/diffusion_pytorch_model.bin'
+        from_pretrained: '/data2/sun/data/diffuser/unet/diffusion_pytorch_model.bin'
         in_channels: 4
         out_channels: 4
         model_channels: 320
@@ -48,7 +48,7 @@ model:
       target: ldm.models.autoencoder.AutoencoderKL
       params:
         embed_dim: 4
-        from_pretrained: '/data/scratch/diffuser/stable-diffusion-v1-4/vae/diffusion_pytorch_model.bin'
+        from_pretrained: '/data2/sun/data/diffuser/vae/diffusion_pytorch_model.bin'
         monitor: val/rec_loss
         ddconfig:
           double_z: true
@@ -71,26 +71,30 @@ model:
     cond_stage_config:
       target: ldm.modules.encoders.modules.FrozenCLIPEmbedder
       params:
+        version: '/data2/sun/data/clip-vit-large-patch14'
         use_fp16: True
 
 data:
   target: main.DataModuleFromConfig
   params:
-    batch_size: 64
+    batch_size: 2
+    num_workers: 1
     wrap: False
     train:
-      target: ldm.data.base.Txt2ImgIterableBaseDataset
+      target: ldm.data.custom.Txt2ImgIterableBaseDataset
       params:
-        file_path: "/data/scratch/diffuser/laion_part0/"
+        file_path: '/data2/sun/data/FFHQ-Text-Dataset/Image/00_Female/'
+        txt_path: '/data2/sun/data/FFHQ-Text-Dataset/Text/00_Female/'
+        img_size: 256
         world_size: 1
         rank: 0
 
 lightning:
   trainer:
     accelerator: 'gpu' 
-    devices: 4
+    devices: 2
     log_gpu_memory: all
-    max_epochs: 2
+    max_epochs: 50
     precision: 16
     auto_select_gpus: False
     strategy:
